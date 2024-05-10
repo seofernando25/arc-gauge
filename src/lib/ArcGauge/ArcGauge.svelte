@@ -23,20 +23,26 @@
     export let arcs: ArcDescription[] = [];
     const arc_refs: SVGCircleElement[] = [];
 
+    // QUICK REMINDER:
+    // The dollar sign variables are computed based on the stroke_width
+    // In Angular, this would be equivalent to the computed signal (but you could also use RxJS)
+
     export let cursorPosition = 0.25;
+    // Separate displayed tweened value
     let cursorValue = tweened(cursorPosition);
     $: cursorValue.set(cursorPosition);
+    $: current_arc = arcs.find(
+        (arc) => arc.start <= $cursorValue && arc.end >= $cursorValue
+    );
+    // X and Y coordinates of the cursor
+    $: cursor_x = -2 * Math.cos($cursorValue * Math.PI);
+    $: cursor_y = 1 - 2 * Math.sin($cursorValue * Math.PI);
 
     export let stroke_width = 1;
     $: padding_size = stroke_width / 10;
     $: pad = 1.25 * stroke_width;
     $: radius = 2;
     $: circumference = radius * Math.PI * 2;
-    $: current_arc = arcs.find(
-        (arc) => arc.start <= $cursorValue && arc.end >= $cursorValue
-    );
-    $: cursor_x = -2 * Math.cos($cursorValue * Math.PI);
-    $: cursor_y = 1 - 2 * Math.sin($cursorValue * Math.PI);
 
     // region Loading Animation
     const sequence: TimelineDefinition = [
@@ -65,7 +71,6 @@
 </script>
 
 <div class="arc-wrapper">
-    <!-- viewBox={"-1 -1 2 2"} -->
     <svg
         width="100%"
         height="100%"
@@ -112,7 +117,6 @@
             {@const line_width = stroke_width * 4}
             {@const line_spacing = stroke_width * 1.5}
 
-            <!-- content here -->
             <line
                 x1={-line_width - line_spacing / 2}
                 y1={line_height}
@@ -140,9 +144,7 @@
 
 <style lang="scss">
     .arc-wrapper {
-        // Grow to fill parent
         aspect-ratio: 2 / 1;
-        object-fit: contain;
         display: flex;
     }
 
