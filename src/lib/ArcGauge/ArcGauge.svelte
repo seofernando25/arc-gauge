@@ -24,8 +24,8 @@
     const arc_refs: SVGCircleElement[] = [];
 
     // QUICK REMINDER:
-    // The dollar sign variables are computed based on the stroke_width
-    // In Angular, this would be equivalent to the computed signal (but you could also use RxJS)
+    // The dollar sign variables are "reactive statements" that will be re-evaluated whenever the variables they depend on change.
+    // In Angular, this would be equivalent to the computed signal (but you could also the same with RxJS)
 
     export let cursorPosition = 0.25;
     // Separate displayed tweened value
