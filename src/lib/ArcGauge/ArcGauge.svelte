@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
     export type ArcDescription = {
         start: number;
         end: number;
@@ -8,66 +8,26 @@
 
 <script lang="ts">
     import "$lib/tc.css";
-    import {
-        stagger,
-        timeline,
-        type AnimationControls,
-        type TimelineDefinition,
-    } from "motion";
-    import { tweened } from "svelte/motion";
 
     const LOADING_COLOR = "#666666";
 
-    export let is_loading = false;
+    let {
+        is_loading = $bindable(false),
+        arcs = $bindable<ArcDescription[]>([]),
+        cursorPosition = $bindable(0.25),
+        stroke_width = $bindable(1),
+    } = $props();
 
-    export let arcs: ArcDescription[] = [];
-    const arc_refs: SVGCircleElement[] = [];
-
-    // QUICK REMINDER:
-    // The dollar sign variables are "reactive statements" that will be re-evaluated whenever the variables they depend on change.
-    // In Angular, this would be equivalent to the computed signal (but you could also the same with RxJS)
-
-    export let cursorPosition = 0.25;
-    // Separate displayed tweened value
-    let cursorValue = tweened(cursorPosition);
-    $: cursorValue.set(cursorPosition);
-    $: current_arc = arcs.find(
-        (arc) => arc.start <= $cursorValue && arc.end >= $cursorValue
+    let current_arc = $derived(
+        arcs.find((arc) => arc.start <= cursorPosition && arc.end >= cursorPosition)
     );
-    // X and Y coordinates of the cursor
-    $: cursor_x = -2 * Math.cos($cursorValue * Math.PI);
-    $: cursor_y = 1 - 2 * Math.sin($cursorValue * Math.PI);
+    let cursor_x = $derived(-2 * Math.cos(cursorPosition * Math.PI));
+    let cursor_y = $derived(1 - 2 * Math.sin(cursorPosition * Math.PI));
 
-    export let stroke_width = 1;
-    $: padding_size = stroke_width / 10;
-    $: pad = 1.25 * stroke_width;
-    $: radius = 2;
-    $: circumference = radius * Math.PI * 2;
-
-    // region Loading Animation
-    const sequence: TimelineDefinition = [
-        [arc_refs, { opacity: 0.6 }, { duration: 0.3, delay: stagger(0.1) }],
-        [arc_refs, { opacity: 1 }, { duration: 0.3, delay: stagger(0.1) }],
-    ];
-
-    let loading_anim: AnimationControls | undefined;
-    $: {
-        if (is_loading) {
-            if (loading_anim) {
-                loading_anim.finish();
-            }
-            loading_anim = timeline(sequence, {
-                repeat: Infinity,
-                delay: 0.5,
-            });
-        } else {
-            if (loading_anim) {
-                loading_anim.cancel();
-                loading_anim = undefined;
-            }
-        }
-    }
-    // endregion
+    let padding_size = $derived(stroke_width / 10);
+    let pad = $derived(1.25 * stroke_width);
+    let radius = 2;
+    let circumference = $derived(radius * Math.PI * 2);
 </script>
 
 <div class="arc-wrapper">
@@ -88,12 +48,13 @@
                 index === arcs.length - 1 ? end : end - padding_size}
 
             <circle
-                bind:this={arc_refs[index]}
+                class:loading-arc={is_loading}
+                style={`--arc-delay: ${index * 0.1}s`}
                 cx={0}
                 cy={1}
                 r={radius}
                 stroke={is_loading ? LOADING_COLOR : arc?.color}
-                transform="rotate({180 + padStart * 180})"
+                transform={`rotate(${180 + padStart * 180})`}
                 transform-origin={`${0} ${1}`}
                 stroke-dashoffset={circumference -
                     ((padEnd - padStart) / 2) * circumference}
@@ -151,6 +112,12 @@
     .opacity-shimmer {
         opacity: 0.6;
         animation: OpacityShimmer 1s infinite;
+    }
+
+    .loading-arc {
+        opacity: 0.6;
+        animation: OpacityShimmer 0.6s infinite both;
+        animation-delay: var(--arc-delay, 0s);
     }
 
     .delay-1 {
